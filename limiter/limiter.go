@@ -2,6 +2,7 @@
 package limiter
 
 import (
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -180,6 +181,17 @@ func (l *Limiter) GetTTL() time.Duration {
 	l.RLock()
 	defer l.RUnlock()
 	return l.ttl
+}
+
+// GetLimit is thread-safe way of getting the number of requests allowed per second.
+func (l *Limiter) GetLimit() rate.Limit {
+	lmtMax := l.GetMax()
+	lmtTTL := l.GetTTL()
+	if lmtTTL == 0 {
+		return rate.Inf
+	}
+
+	return rate.Limit(float64(lmtMax) / lmtTTL.Seconds())
 }
 
 // SetMessage is thread-safe way of setting HTTP message when limit is reached.
@@ -401,7 +413,7 @@ func (l *Limiter) GetHeader(header string) []string {
 	entriesAsMap := entriesAsGoCache.Items()
 	entries := make([]string, 0)
 
-	for entry, _ := range entriesAsMap {
+	for entry := range entriesAsMap {
 		entries = append(entries, entry)
 	}
 
@@ -440,8 +452,8 @@ func (l *Limiter) RemoveHeaderEntries(header string, entriesForRemoval []string)
 }
 
 func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time.Duration) bool {
-	lmtMax := l.GetMax()
-	lmtTTL := l.GetTTL()
+	lmt := l.GetLimit()
+	burst := int(math.Ceil(float64(lmt)))
 
 	l.Lock()
 	defer l.Unlock()
@@ -449,7 +461,7 @@ func (l *Limiter) limitReachedWithTokenBucketTTL(key string, tokenBucketTTL time
 	if _, found := l.tokenBuckets.Get(key); !found {
 		l.tokenBuckets.Set(
 			key,
-			rate.NewLimiter(rate.Every(lmtTTL), int(lmtMax)),
+			rate.NewLimiter(lmt, burst),
 			tokenBucketTTL,
 		)
 	}

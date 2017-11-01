@@ -85,7 +85,7 @@ func TestMuchHigherMaxRequests(t *testing.T) {
 	}
 
 	if lmt.LimitReached(key) == false {
-		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+2, numRequests)
+		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+1, numRequests)
 	}
 
 }
@@ -102,7 +102,7 @@ func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	}
 
 	if lmt.LimitReached(key) == false {
-		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+2, numRequests)
+		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+1, numRequests)
 	}
 
 }
