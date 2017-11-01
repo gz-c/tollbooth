@@ -104,5 +104,26 @@ func TestMuchHigherMaxRequestsWithCustomTokenBucketTTL(t *testing.T) {
 	if lmt.LimitReached(key) == false {
 		t.Errorf("N(%v) limit should be reached because it exceeds %v request per second.", numRequests+1, numRequests)
 	}
+}
 
+func TestSubOneRequestLimit(t *testing.T) {
+	numRequests := 1
+	lmt := New(nil).SetMax(int64(numRequests)).SetTTL(time.Millisecond * 1500)
+	key := "127.0.0.1|/"
+
+	if lmt.LimitReached(key) == true {
+		t.Errorf("N(%v) limit should not be reached.", 0)
+	}
+	if lmt.LimitReached(key) == false {
+		t.Errorf("N(%v) limit should be reached.", 1)
+	}
+
+	time.Sleep(time.Millisecond * 1500)
+
+	if lmt.LimitReached(key) == true {
+		t.Errorf("N(%v) limit should not be reached.", 0)
+	}
+	if lmt.LimitReached(key) == false {
+		t.Errorf("N(%v) limit should be reached.", 1)
+	}
 }
